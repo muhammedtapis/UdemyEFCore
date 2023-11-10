@@ -12,7 +12,8 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         public string Name { get; set; }
 
         //<---------------MANY TO MANY oluşması için iki sınıfa da List<T> eklenir-------------->
-        public List<Student> Students { get; set; }   = new List<Student>(); //null hatası almamak için init ettik
+        public virtual List<Student> Students { get; set; }   = new List<Student>(); //null hatası almamak için init ettik
 
+        //virtual keywordu Lazyloading yaparken EFCore propertyleri override edeceği için yapılıyor.
     }
 }

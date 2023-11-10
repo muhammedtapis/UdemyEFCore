@@ -1,15 +1,45 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using System.Linq.Expressions;
 using UdemyEFCore.CodeFirst;
 using UdemyEFCore.CodeFirst.DataAccessLayer;
 
 
 DbContextInitializer.Build();
 
-using(var _context = new AppDbContext())
+
+using (var _context = new AppDbContext())
 {
 
+    
     //<---------------DATA-ADD ONE-TO-MANY-------------->
+
+    //void DataAddOneToMany()
+    //{
+
+    //    // var category = new Category() { Name = "Defterler" };
+
+    //    var category = _context.Categories.First(x => x.Name=="Defterler"); //databasede hazır bulunan kategori sınıfını çekip öyle product ekleyebilirsin.
+
+    //    //var product = new Product() { Name = "Defter 3", Price = 100, Stock = 200, Barcode = 123, CategoryId = category.Id };
+
+    //    var product = new Product() { Name = "Kalem 1", Price = 100, Stock = 200, Barcode = 123 ,Category=category}; //burda gerçekleşen bizim veritabanımızda henüz category yok bu sebeple id yazamıyoruz
+    //    //                                                                                                             //yukarda instance oluşturulan category burada veriliyor.
+    //    //database kayıt yaparken bu durumda ayrıyetten _context.Category.Add(category);
+    //    //yazmamıza gerek yok çünkü bizim datamız ilişkili data EF core kendisi onu da ekliyor.
+    //    //ama instance oluşturulmuş olması gerek.
+
+    //    _context.Products.Add(product);   //sadece product ekleyerek hem product hem category ekleme işlemi yaptık.PRODUCT ÜZERİNDEN CATEGORY EKLEME
+
+    //    category.Products.Add(new Product() { Name = "Defterler 1", Price = 100, Stock = 200, Barcode = 123 }); //CATEGORY ÜZERİNDEN PRODUCT EKLEME en sonda category belirtmeye gerek yok çünkü  kategori üzerinden eklio
+    //    category.Products.Add(new Product() { Name = "Defterler 2", Price = 100, Stock = 200, Barcode = 123 });
+    //    _context.Add(category);
+
+
+
+    //    //_context.SaveChanges();
+    //}
 
     // var category = new Category() { Name = "Defterler" };
 
@@ -93,23 +123,234 @@ using(var _context = new AppDbContext())
 
     //üçüncü senaryoda var olan öğretmen ya da öğrenci üzerinden bir dierğini ekleme YANİ UPDATE ETME BURASI ÖNEMLİ update methodunu çağırmaya gerek yok.
 
-    var teacher =_context.Teachers.First(x => x.Name == "Hasan Öğretmen");
-    teacher.Students.AddRange( new List<Student>  //birden fazla aynı yerde eklemek için
-        {   
-        new Student() { Name = "Zeynep", Age = 10 },
-        new Student() { Name = "Işıl", Age = 9 }
-        }
-    );
+    //var teacher =_context.Teachers.First(x => x.Name == "Hasan Öğretmen");
+    //teacher.Students.AddRange( new List<Student>  //birden fazla aynı yerde eklemek için
+    //    {   
+    //    new Student() { Name = "Zeynep", Age = 10 },
+    //    new Student() { Name = "Işıl", Age = 9 }
+    //    }
+    //);
 
-    _context.SaveChanges();
+    //_context.SaveChanges();
 
-    Console.WriteLine("Kaydedildi");
+
 
     //< ---------------DATA - ADD MANY - TO - MANY-------------- >
 
 
 
-    
+    //< ---------------DATA - DELETE - BEHAVIORS-------------- >
+
+
+
+    //var category = new Category()
+    //{
+    //    Name = "Kalemler",
+    //    Products = new List<Product>()
+    //{
+
+    //new Product(){ Name="kalem1" ,Price=100,Stock=200,Barcode=444},
+    //new Product(){ Name="kalem2" ,Price=100,Stock=200,Barcode=444},
+    //new Product(){ Name="kalem3" ,Price=100,Stock=200,Barcode=444}
+
+    //}
+    //};
+
+    //_context.Add(category);
+    //_context.SaveChanges();
+
+    //var c = _context.Categories.First(x => x.Name == "Kalemler"); // kategoriyi sorguladık c ye atadık
+
+    //<--------Bu kısım Restrict olduğu zaman geçerli---------->
+    //var products = _context.Products.Where(x => x.CategoryId == c.Id); // davranış restrict oldğu zaman bizim kategoriyi silmemiz izin vermez önce o kategoriye bağlı products
+    //_context.RemoveRange(products);                     //silinmesi gerekir ondan sonra kategori silinebilir. removeRange methodu liste halinde gönderilen verileri siler.
+    //<--------Bu kısım Restrict olduğu zaman geçerli---------->
+
+    //_context.Categories.Remove(c); //kategori silme
+    //_context.SaveChanges();
+
+
+
+    //< ---------------DATA - DELETE - BEHAVIORS-------------- >
+
+    //< ---------------RELATED DATA LOAD-------------- >
+
+
+    //<-----------EAGER LOADING----------->
+
+    //var category = new Category() { Name = "Defterler",Products =new List<Product>() 
+    //{
+    //    new (){Name="Defter 1",Price=100,Stock=100,Barcode=111,ProductFeature=new (){Color="Yellow",Height=12,Width=6}},
+    //    new (){Name="Defter 2",Price=100,Stock=100,Barcode=111,ProductFeature=new (){Color="Blue",Height=12,Width=6}},
+    //    new (){Name="Defter 3",Price=100,Stock=100,Barcode=111,ProductFeature=new (){Color="Green",Height=12,Width=6}}
+    //} 
+    //};
+
+    ////ASENKRON KULLANMAYA ÇALIŞ
+    //await _context.AddAsync(category);
+    ////_context.Categories.Add(category); //bir üst satırla aynı işi yapar farketmio
+    //await _context.SaveChangesAsync();
+
+
+    //genelden özele sorgulama
+    //var categoryWithProducts = _context.Categories.Include(x => x.Products).
+    //ThenInclude(x => x.ProductFeature).First();  //asıl eager loading kodu categorileri getirirken Include methodyla productları da ekledik sorguya.
+    //ThenInclude methoduyla da producttan product feature erişim sağladık.
+    //özelden genele sorgulama
+    //var productFeatureWithProducts = _context.ProductFeatures.Include(x => x.Product).ThenInclude(x => x.Category).First();
+    //ortadaki entityden sorgulama 2 tane farklı navigation property olanlar için
+    //var product = _context.Products.Include(x => x.ProductFeature).Include(x => x.Category).First(); //iki tane Include kullandık farkı orada.
+
+    //var categoryWithProducts = _context.Categories.First(); //bu kodu yazarsan products erişemezsin aşağıdaki kodda hata almazsın fakat veritabanından products verisi gelmez.
+
+    //categoryWithProducts.Products.ForEach(product =>
+    //{
+    //    Console.WriteLine($"Ürün : {categoryWithProducts.Name} - {product.Id} - {product.Name} - {product.Price} - {product.Stock} - {product.Barcode}");
+    //});
+
+    //Console.WriteLine("İŞlEM BİTTİ");
+
+    //<-----------EAGER LOADING----------->
+
+    //<-----------EXPLICIT LOADING----------->
+
+    //var category = _context.Categories.First();
+
+    //if (true)
+    //{
+    //    _context.Entry(category).Collection(x => x.Products).Load(); //CAtegory entitysi birden fazla product sahip olduğu için collection ile girdik sorguya.
+    //    category.Products.ForEach(x =>
+    //    {
+    //        Console.WriteLine(x.Name);
+    //    });
+
+    //}
+
+
+    //var product = await _context.Products.FirstAsync();
+
+    //if (true)
+    //{
+    //    _context.Entry(product).Reference(x => x.ProductFeature).Load(); //productın bire bir ilişkisi olduğu için collection değil de referans ile girdik sorguya
+    //    Console.WriteLine(product.ProductFeature.Color);
+    //}
+
+
+    //<-----------EXPLICIT LOADING----------->
+
+
+    //< ---------------LAZY LOADING-------------- >
+
+    //var category = await _context.Categories.FirstAsync();
+    //Console.WriteLine("Kategori Çekildi");
+    //var products  = category.Products;
+    //foreach (var product in products) 
+    //{
+    //    var productFeature = product.ProductFeature;  //LazyLoading in ikinci sorgusu product bilgilerini almaktı bu satırda üçüncü sorguyu yapacak product featureları alcak
+    //                                                  //lazy loadingin kötü olduğu nokta her bir döngüde navigation propertye gittiği için
+    //                                                  //her yeni döngüde yeni bir sorgu yazıyor.SIKINTILI DURUM!!! performans problemi
+    //                                                  //(N+1) PROBLEMİ DENİR BU PROBLEME !!
+    //                                                  //DOMAIN DRIVEN DESIGN DA LAZYLOADING Açık olması tavsiye edilir.
+    //}
+
+    //Console.WriteLine("İŞLEM BİTTİ");
+
+    //< ---------------LAZY LOADING-------------- >
+
+
+    //< ---------------RELATED DATA LOAD-------------- >
+
+    //< ---------------EF CORE INHERITANCE-------------- >
+
+    //< ---------------TPH TABLE PER HIERARCHY-------------- >
+
+    void  TablePerHiearchy()
+    {
+        //AppDbContextte baseClassı Dbset olarak eklediğimiz zaman subclassların dBsetleri için tablo oluşturmaz.!!! 
+        
+        //data ekleme
+        //_context.Persons.Add(new Manager() { FirstName = "m1", LastName = "M1", Age = 31, Grade = 1 });
+        //_context.Persons.Add(new Employee() { FirstName = "e1", LastName = "E1", Age = 20, Salary = 3000 });
+
+        //data okuma
+
+        var managers = _context.Managers.ToList(); //sadece managers gelcek
+        var employees = _context.Employees.ToList();   //sadece employees gelcek 
+
+        var persons = _context.Persons.ToList();  //hem mangers hem employees gelcek çünkü parent class
+
+        persons.ForEach(p =>
+        {
+            switch (p)
+            {
+                case Manager manager: //gelen p değeri Manager ise
+                    Console.WriteLine($"manager Entity : {manager.Grade}");
+                    break; 
+                case Employee employee:  //gelen p değeri employee ise
+                    Console.WriteLine($"employee Entity : {employee.Salary}");
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        _context.SaveChanges();
+
+    }
+    //TablePerHiearchy();
+
+    //< ---------------TPH TABLE PER HIERARCHY-------------- >
+
+    //< ---------------TPT TABLE PER TYPE-------------- >
+
+    void TablePerType()
+    {
+        //_context.Managers.Add(new Manager() { FirstName = "m1", LastName = "M1", Age = 31, Grade = 1 }); //managers üzerinden kayıt
+        //_context.Employees.Add(new Employee() { FirstName = "e1", LastName = "E1", Age = 14, Salary = 2000 }); //employees üzerinden kayıt
+
+        _context.Persons.Add(new Manager() { FirstName = "m2", LastName = "M2", Age = 31, Grade = 1 });      //iki kayıt da persons üst sınıfı üzerinde yapıldı
+        _context.Persons.Add(new Employee() { FirstName = "e2", LastName = "E2", Age = 14, Salary = 2000 });
+        
+        _context.SaveChanges();
+
+        var managers = _context.Managers.ToList(); //sadece managers gelcek
+        var employees = _context.Employees.ToList();   //sadece employees gelcek 
+
+        var persons = _context.Persons.ToList();  //hem mangers hem employees gelcek çünkü parent class
+
+        persons.ForEach(p =>
+        {
+            switch (p)
+            {
+                case Manager manager: //gelen p değeri Manager ise
+                    Console.WriteLine($"manager Entity : {manager.Grade}");
+                    break;
+                case Employee employee:  //gelen p değeri employee ise
+                    Console.WriteLine($"employee Entity : {employee.Salary}");
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        Console.WriteLine("İŞLEM BİTTİ");
+    }
+    //TablePerType();
+
+    //< ---------------TPT TABLE PER TYPE-------------- >
+
+    //< ---------------EF CORE INHERITANCE-------------- >
+
+
+    //< ---------------EF CORE MODEL-------------- >
+
+    void OwnedEntityTypes()
+    {
+
+    }
+    //OwnedEntityTypes();
+    //< ---------------EF CORE MODEL-------------- >
+
     //<---------------DbSet METHODS------------->
 
     //var product1 = _context.Products.First(x => x.Id==100); //bulamazsa exception fırlatır.
@@ -131,6 +372,7 @@ using(var _context = new AppDbContext())
 
 
     //<---------------CONFIGURATION-------------->
+
     //products.ForEach(p =>
     //{
     //    Console.WriteLine($"{p.name}");
@@ -192,3 +434,4 @@ using(var _context = new AppDbContext())
 
 
 }
+

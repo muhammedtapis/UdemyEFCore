@@ -17,7 +17,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
         //<-----------ONE TO ONE RELATION----------->
         //public int ProductId { get; set; }   //EFcore bu classın child Productın parent olduğunu belirtiyoruz burada bunun sebebi foreign key childda tutuluyor .
-        public Product Product { get; set; } //child entity yani productfeature üzerinden product eklenmesin istiyorsak bu alanı kaldırıyoruz.Kod hata vermez
+        public virtual Product Product { get; set; } //child entity yani productfeature üzerinden product eklenmesin istiyorsak bu alanı kaldırıyoruz.Kod hata vermez
                                              //bunu yaptığında lazyloading veya eagerloadingi kapatır yani productFEature üzerinden Product erişimi yapılamaz.
                                              //Domain Driven Design daki yaklaşımlardan bir tanesine örnektir bu durum.!!!!!!!!!
 

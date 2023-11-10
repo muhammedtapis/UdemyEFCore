@@ -13,7 +13,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         public int Id { get; set; }
         public string Name { get; set; }    
 
-        public List<Product> Products { get; set;} = new List<Product>();  // Category üzerinden product eklerken nullexception hatası almamak için List<Product> initialize ettik
+        public virtual List<Product> Products { get; set;} = new List<Product>();  // Category üzerinden product eklerken nullexception hatası almamak için List<Product> initialize ettik
 
     }
 }
