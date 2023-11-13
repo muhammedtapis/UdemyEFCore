@@ -1,7 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Identity.Client;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using UdemyEFCore.CodeFirst;
 using UdemyEFCore.CodeFirst.DataAccessLayer;
 
@@ -12,7 +14,7 @@ DbContextInitializer.Build();
 using (var _context = new AppDbContext())
 {
 
-    
+
     //<---------------DATA-ADD ONE-TO-MANY-------------->
 
     //void DataAddOneToMany()
@@ -20,11 +22,11 @@ using (var _context = new AppDbContext())
 
     //    // var category = new Category() { Name = "Defterler" };
 
-    //    var category = _context.Categories.First(x => x.Name=="Defterler"); //databasede hazır bulunan kategori sınıfını çekip öyle product ekleyebilirsin.
+    //    var category = _context.Categories.First(x => x.Name == "Defterler"); //databasede hazır bulunan kategori sınıfını çekip öyle product ekleyebilirsin.
 
     //    //var product = new Product() { Name = "Defter 3", Price = 100, Stock = 200, Barcode = 123, CategoryId = category.Id };
 
-    //    var product = new Product() { Name = "Kalem 1", Price = 100, Stock = 200, Barcode = 123 ,Category=category}; //burda gerçekleşen bizim veritabanımızda henüz category yok bu sebeple id yazamıyoruz
+    //    var product = new Product() { Name = "Kalem 1", Price = 100, Stock = 200, Barcode = 123, Category = category }; //burda gerçekleşen bizim veritabanımızda henüz category yok bu sebeple id yazamıyoruz
     //    //                                                                                                             //yukarda instance oluşturulan category burada veriliyor.
     //    //database kayıt yaparken bu durumda ayrıyetten _context.Category.Add(category);
     //    //yazmamıza gerek yok çünkü bizim datamız ilişkili data EF core kendisi onu da ekliyor.
@@ -37,31 +39,31 @@ using (var _context = new AppDbContext())
     //    _context.Add(category);
 
 
+    //    var category = new Category() { Name = "Defterler" };
 
+    //    var category = _context.Categories.First(x => x.Name == "Defterler"); //databasede hazır bulunan kategori sınıfını çekip öyle product ekleyebilirsin.
+
+    //    var product = new Product() { Name = "Defter 3", Price = 100, Stock = 200, Barcode = 123, CategoryId = category.Id };
+
+    //    var product = new Product() { Name = "Kalem 1", Price = 100, Stock = 200, Barcode = 123, Category = category }; //burda gerçekleşen bizim veritabanımızda henüz category yok bu sebeple id yazamıyoruz
+    //                                                                                                                    //yukarda instance oluşturulan category burada veriliyor.
+    //                                                                                                                    //database kayıt yaparken bu durumda ayrıyetten _context.Category.Add(category);
+    //                                                                                                                    //yazmamıza gerek yok çünkü bizim datamız ilişkili data EF core kendisi onu da ekliyor.
+    //                                                                                                                    //ama instance oluşturulmuş olması gerek.
+
+    //    _context.Products.Add(product);   //sadece product ekleyerek hem product hem category ekleme işlemi yaptık.PRODUCT ÜZERİNDEN CATEGORY EKLEME
+
+    //    category.Products.Add(new Product() { Name = "Defterler 1", Price = 100, Stock = 200, Barcode = 123 }); //CATEGORY ÜZERİNDEN PRODUCT EKLEME en sonda category belirtmeye gerek yok çünkü  kategori üzerinden eklio
+    //    category.Products.Add(new Product() { Name = "Defterler 2", Price = 100, Stock = 200, Barcode = 123 });
+    //    _context.Add(category);
+
+
+
+    //    _context.SaveChanges();
     //    //_context.SaveChanges();
     //}
 
-    // var category = new Category() { Name = "Defterler" };
 
-    //var category = _context.Categories.First(x => x.Name=="Defterler"); //databasede hazır bulunan kategori sınıfını çekip öyle product ekleyebilirsin.
-
-    //var product = new Product() { Name = "Defter 3", Price = 100, Stock = 200, Barcode = 123, CategoryId = category.Id };
-
-    //var product = new Product() { Name = "Kalem 1", Price = 100, Stock = 200, Barcode = 123 ,Category=category}; //burda gerçekleşen bizim veritabanımızda henüz category yok bu sebeple id yazamıyoruz
-    //                                                                                                             //yukarda instance oluşturulan category burada veriliyor.
-    //database kayıt yaparken bu durumda ayrıyetten _context.Category.Add(category);
-    //yazmamıza gerek yok çünkü bizim datamız ilişkili data EF core kendisi onu da ekliyor.
-    //ama instance oluşturulmuş olması gerek.
-
-    //_context.Products.Add(product);   //sadece product ekleyerek hem product hem category ekleme işlemi yaptık.PRODUCT ÜZERİNDEN CATEGORY EKLEME
-
-    //category.Products.Add(new Product() { Name = "Defterler 1", Price = 100, Stock = 200, Barcode = 123}); //CATEGORY ÜZERİNDEN PRODUCT EKLEME en sonda category belirtmeye gerek yok çünkü  kategori üzerinden eklio
-    //category.Products.Add(new Product() { Name = "Defterler 2", Price = 100, Stock = 200, Barcode = 123 });
-    //_context.Add(category);
-
-
-
-    //_context.SaveChanges();
 
 
     //<---------------DATA-ADD ONE-TO-MANY-------------->
@@ -264,10 +266,10 @@ using (var _context = new AppDbContext())
 
     //< ---------------TPH TABLE PER HIERARCHY-------------- >
 
-    void  TablePerHiearchy()
+    void TablePerHiearchy()
     {
         //AppDbContextte baseClassı Dbset olarak eklediğimiz zaman subclassların dBsetleri için tablo oluşturmaz.!!! 
-        
+
         //data ekleme
         //_context.Persons.Add(new Manager() { FirstName = "m1", LastName = "M1", Age = 31, Grade = 1 });
         //_context.Persons.Add(new Employee() { FirstName = "e1", LastName = "E1", Age = 20, Salary = 3000 });
@@ -285,7 +287,7 @@ using (var _context = new AppDbContext())
             {
                 case Manager manager: //gelen p değeri Manager ise
                     Console.WriteLine($"manager Entity : {manager.Grade}");
-                    break; 
+                    break;
                 case Employee employee:  //gelen p değeri employee ise
                     Console.WriteLine($"employee Entity : {employee.Salary}");
                     break;
@@ -349,7 +351,174 @@ using (var _context = new AppDbContext())
 
     }
     //OwnedEntityTypes();
+
+    void KeylessEntityTypes()
+    {
+        //var category = new Category() { Name = "Kalemler" };
+        //category.Products.Add(new Product() { Name = "Kalem 1", Barcode = 1907, Price = 100, Stock = 10, ProductFeature = new() {Color="sarı",Height=10, Width=6} });
+        //category.Products.Add(new Product() { Name = "Kalem 2", Barcode = 1907, Price = 100, Stock = 10, ProductFeature = new() { Color = "lacivert", Height = 10, Width = 6 } });
+        //category.Products.Add(new Product() { Name = "Kalem 3", Barcode = 1907, Price = 100, Stock = 10, ProductFeature = new() { Color = "yeşil", Height = 10, Width = 6 } });
+        //_context.Categories.Add(category);
+        //_context.SaveChanges();
+
+
+        var productFulls = _context.ProductFulls.FromSqlRaw(@"select c.Name'Category Name',p.Name,p.Price,pf.Height from Products p
+         join ProductFeatures pf on p.Id=pf.Id
+         join Categories c on p.CategoryId=c.Id").ToList();
+        Console.WriteLine("İşlem Bitti  ! !");
+    }
+    //KeylessEntityTypes();
+
+    void EntityProperties()
+    {
+
+    }
+    //EntityProperties
+
+    void Indexes()
+    {
+        //_context.Products.Where(x => x.Name == "Kalem 1").Select(x => new { x.Name,x.Price,x.Stock }); //Sorgu Name alanı Kalem 1 olan name price ve stock bilgilerini getir.
+        var category = new Category() { Name="kağıtlar"};
+        //_context.Products.Add(new Product() { Name = "kağıt1", Barcode = 1231, Price = 120, DiscountPrice = 100, Stock = 10, Url = "abab",Category=category
+        //    , ProductFeature = new() { Height = 10,Color="red",Width=12}
+        //});
+        _context.Products.Add(new Product()
+        {
+            Name = "kağıt1",
+            Barcode = 1231,
+            Price = 120,
+            DiscountPrice = 150,
+            Stock = 10,
+            Url = "abab",
+            Category = category
+    ,
+            ProductFeature = new() { Height = 10, Color = "red", Width = 12 }
+        });
+        _context.SaveChanges();
+        Console.WriteLine("BAŞARILI");
+    }
+    //Indexes(); 
     //< ---------------EF CORE MODEL-------------- >
+
+    //< ---------------QUERY-------------- >
+
+    void ClientServerEvaluation()
+    {
+        //_context.People.Add(new Person() { Name = "mami", Phone = "05554443322" });
+        //_context.People.Add(new Person() { Name = "ali", Phone = "05334443322" });
+        //_context.SaveChanges();
+
+        //var people = _context.People.Where(x => FormatPhone(x.Phone) == "5554443322").ToList(); // aşağdıaki method baştaki sıfırı atıyo karşılaştırcağımız telefon da 0 sız olduğu için methodu lambda içinde vermeye
+        //çalıştık ama olmadı çünkü burası sql cümleciğine dönüşemez.Bunu aşmak için Client değerlendirmesi yapmamız lazım
+        var people = _context.People.ToList().Where(x => FormatPhone(x.Phone) == "5554443322").ToList(); //toList eklediğimz zaman bu kod çalışıyor çünkü memory alınıyor burası server değerlendirmesi bitmiş oluyor
+
+        Console.WriteLine("İşlem tamamlandı");
+    }
+    //ClientServerEvaluation();
+
+    // Inner Join  iki tablo arasındaki ortak alanları almak istediğimizde kullanılan join tipi iki tablo arasında NAVIGATION PROP yoksa kullanabilirsin
+    //navigation propertyleri kaldırmadık data eklemek kolay olsun diye ama data okurken bunları kullanmayıp join yapısıyla çalışacağız
+    void InnerJoin()
+    {
+        //var category = new Category() { Name = "Kalemler" };
+        //category.Products.Add(new Product() { Name = "Kalem 1", Barcode = 1907, Price = 100, Stock = 10, Url = "http", ProductFeature = new() { Color = "sarı", Height = 10, Width = 6 } });
+        //category.Products.Add(new Product() { Name = "Kalem 2", Barcode = 1907, Price = 100, Stock = 10, Url = "http", ProductFeature = new() { Color = "lacivert", Height = 10, Width = 6 } });
+        //category.Products.Add(new Product() { Name = "Kalem 3", Barcode = 1907, Price = 100, Stock = 10, Url = "http", ProductFeature = new() { Color = "yeşil", Height = 10, Width = 6 } });
+        //_context.Categories.Add(category);
+        //_context.SaveChanges();
+        //Console.WriteLine("İŞLEM BİTTİ");
+
+        //join yapısı linq sorgusu yazabiliriz
+
+        var result = _context.Categories.Join(_context.Products,x => x.Id,y => y.CategoryId, (c, p) => new  //virgülden sonraki ilk kısım yani x category denk geliyor ikinci kısım ise Product
+        {                                                                                   //üçüncü kısım ise result selector yani alcağımız data c category p product karşılık gelir
+            CategoryName = c.Name,  //istersek burdaki gibi isimsiz bir class da oluşturabiliriz normalde böyle bir class yok böyle propertyler yok
+            ProductName = p.Name,
+            ProductPrice = p.Price,
+
+        }).ToList();
+
+        //daha sonra bu oluşturulan isimsiz classtaki propertylere erişmek için foreach ile dönebilirz.
+
+        result.ForEach(x => 
+        {
+            var a = x.ProductName;
+            var b = x.ProductPrice;
+            var c = x.CategoryName; //yukarıda oluşturduğumuz propertyler var sadece. isimsiz class yolu  birinci yoldu.
+        });
+
+        //diğer yol ise biz sadece products almak isteyebiliriz. 2 li join
+        var result1 = _context.Categories.Join(_context.Products, x => x.Id, y => y.CategoryId, (c, p) => p).ToList(); //sadece Products geldi.
+        var result2 = _context.Categories.Join(_context.Products, x => x.Id, y => y.CategoryId, (c, p) => c).ToList(); //sadece category geldi.
+
+        //SQL cümleciği gibi yazabiliriz bu ayrı br yol 2li join
+        var result3 = (from c in _context.Categories  //category c olarak al products p olarak al ve joinle categorynin id si ile products un CategoryId sini kullanarak.
+                      join p in _context.Products on c.Id equals p.CategoryId
+                      select c).ToList();
+
+        //3 lü join
+        var result4 = _context.Categories
+            .Join(_context.Products, c => c.Id, p => p.CategoryId, (c, p) => new { c, p })
+            .Join(_context.ProductFeatures, x => x.p.Id, y => y.Id, (c, pf) =>  new //bu satırda da productId ile productfeature idsi joinlendi zaten o iki id identicaldi.
+            {                                                                      //bir üst kodda (c,pf) c category yerine p product verirsen category erişimin kapanır.
+                                                                                   //ama category üzerinden product erişebiliyoruz.
+                CategoryName = c.c.Name,
+                ProductName = c.p.Name,
+                ProductFeatureColor = pf.Color
+            });
+
+        //SQL cümleciği gibi yazabiliriz bu ayrı br yol 3li join BU YOL DAHA ANLAŞILIR BUNU KULLAN.!!!!!!!!
+
+        var result5 = (from c in _context.Categories
+                       join p in _context.Products on c.Id equals p.CategoryId
+                       join pf in _context.ProductFeatures on p.Id equals pf.Id  //product feature joinle ne ile productın id si ile kendi id si olarak.
+                       select new
+                       {
+                           CategoryName = c.Name,
+                           ProductName = p.Name,
+                           ProductFeatureColor = pf.Color
+                       }).ToList();
+        //tüm dataları beraber almak istiyorsan sonunu değiştir
+
+        var result6 = (from c in _context.Categories
+                       join p in _context.Products on c.Id equals p.CategoryId
+                       join pf in _context.ProductFeatures on p.Id equals pf.Id  //product feature joinle ne ile productın id si ile kendi id si olarak.
+                       select new
+                       {c,p,pf}).ToList(); //bu şekilde bütün datalar gelcek
+        result6.ForEach(x =>
+        {
+            var categoryName = x.c.Name;
+            var productName = x.p.Name;
+            var productFeatureColor = x.pf.Color;
+        });
+        Console.WriteLine("İŞLEM BİTTİ");
+    }
+    //InnerJoin();
+
+    void LeftAndRightJoin()
+    {
+        var result = (from p in _context.Products
+                      join pf in _context.ProductFeatures on p.Id equals pf.Id into pflist  //bu kısımda productFEatureların bi listesii temsil ediyor.Biz bütün productları almaya çalışıyoruz şuan
+                      from pf in pflist.DefaultIfEmpty() //eğer productfeature boşsa defaultunu al diyoruz 4 tane product 3 tane productfeature satırımız var o eksik olan productfeature yerine null döncek.
+                      select new { p, pf }).ToList();
+        var result1 = (from p in _context.Products
+                      join pf in _context.ProductFeatures on p.Id equals pf.Id into pflist  
+                      from pf in pflist.DefaultIfEmpty() 
+                      select new 
+                      {
+                          Product_Name = p.Name,
+                          Product_Color = pf.Color, //int değerlerde bunu yaparsak uygulama patlar çünkü left join yaptık productların hepsin aldık ama bi product satırında product feature null gelecek.
+                          Product_Width = (int?)pf.Width   //her zaman dolu gelmeyeceği için patlayacak bunu engellemek için NULLABLE belirtebilirsin
+                          Product_Height = (int?)pf.Height == null ? 5: pf.Height //default atama eğer null ise 5 değerini ata deilse de kendi değerini ata.
+                      }).ToList();
+
+        Console.WriteLine("İŞLEM BİTTİ");
+    }
+    LeftAndRightJoin();
+
+    //< ---------------QUERY-------------- >
+
+
 
     //<---------------DbSet METHODS------------->
 
@@ -435,3 +604,9 @@ using (var _context = new AppDbContext())
 
 }
 
+
+// bu methodu query konusundaClient server Evaluation için oluşturduk custom sorgu içinde denemeye çalışcaz.
+string FormatPhone(string phone)
+{
+    return phone.Substring(1,phone.Length-1);
+}

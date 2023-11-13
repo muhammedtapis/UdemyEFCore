@@ -11,9 +11,12 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 {
     //<---------------CONFIGURATION-------------->
 
-   // [Table("ProductTable",Schema ="products")]   //tablo ve şema ismi burada verilebilir.  Validation Kısmı için yapılabilir.
+    // [Table("ProductTable",Schema ="products")]   //tablo ve şema ismi burada verilebilir.  Validation Kısmı için yapılabilir.
 
     //<---------------CONFIGURATION-------------->
+
+    [Index(nameof(Name))]  //tip güvemli bir şekilde indeksleme yapacağımız prop. tanımı.
+    //[Index(nameof(Name),nameof(Price))]   //composed index denir buna bu türde oluşturulan indekste iki propertynin de sütunları bulunur.daha çok ikisini bir sorguda kullanıyorsan mantıklı.
     public class Product
     {
         public int Id { get; set; }
@@ -28,10 +31,17 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
         [Precision(18,2)] // migration eklerken aldığın sarı uyarı için bu decimal verdin ama kaç karakter virgülden sonra kaç karakter var onu belirt diyor.
         public decimal Price { get; set; }
+
+        [Precision(9, 2)]
+        public decimal DiscountPrice { get; set; }
         public int Stock { get; set; }
 
-        //yeni eklenen prop tekrar migration oluşturmak gerekiyor.
+
+        //[NotMapped]//bu alanı db de tutmak istemiyorsak maplemeyi kapatıcaz.Entity Properties özelliği.Fluent API ile yaptık.
         public int Barcode { get; set; }
+
+        //[Column(TypeName ="varchar(500)")]  //veritabanındaki alanın tipini belirtebiliyoruz burda URL için 
+        public string Url { get; set; }
 
         //  public DateTime? CreatedDate { get; set; } //nullable yaptık
 

@@ -11,7 +11,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
     {
         //Miras Alma Durumunda EFCORE davranışlarını inceliycez bu sebeple oluşturduk bu sınıfı  TPH TPT
 
-        [Precision(18,2)]
+        [Precision(18,2)]  //decimal olduğu için yaptık bunu yoksa migrationda sarı uyarı veriyo.
         public decimal Salary { get; set; }
     }
 }

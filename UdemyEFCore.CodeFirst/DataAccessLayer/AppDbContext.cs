@@ -14,10 +14,10 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 {
     public class AppDbContext : DbContext
     {
-        //public DbSet<Product> Products { get; set; } //Products EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
-        //public DbSet<Category> Categories { get; set; } //Categories EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
-        //                                                // Bunu eklemezsen AppDbcontextten bu tabloya erişim sağlayıp işlem yapamazsın.
-        //public DbSet<ProductFeature> ProductFeatures { get; set; }
+        public DbSet<Product> Products { get; set; } //Products EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
+        public DbSet<Category> Categories { get; set; } //Categories EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
+                                                        // Bunu eklemezsen AppDbcontextten bu tabloya erişim sağlayıp işlem yapamazsın.
+        public DbSet<ProductFeature> ProductFeatures { get; set; }
 
         //alttaki ikisi many to many için
         //public DbSet<Student> Students { get; set; }
@@ -26,12 +26,16 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
         //alttaki ikisi EfCore Inheritance için
 
-        public DbSet<Manager> Managers {  get; set; }
+        public DbSet<Manager> Managers { get; set; }
         public DbSet<Employee> Employees { get; set; }
 
         //bir de BASECLASS yani BasePerson eklemesi yaptığımızda EFCore davranışı değişiyor.
         //Migration ettiğimizde databasede sadece Persons tablosu oluşacak Employees ve Managers tablosu eklenmeyecek.
-        public DbSet<BasePerson> Persons { get; set; }  //OwnedEntity Tipi olarak kullanacaksan bu baseclass kalkacak olmayacak. ve  bu classtan miras alma durumu olmaycak.
+        public DbSet<BasePerson> Persons { get; set; }  //OwnedEntity Tipi olarak kullanacaksan bu baseclass kalkacak burda olmayacak. ve  bu classtan miras alma durumu olmaycak.
+
+        public  DbSet<ProductFull> ProductFulls { get; set; } //Keyless Tipi için oluşturuldu
+
+        public DbSet<Person> People { get; set; }  //Query kısmı için oluşturduk
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //Trace-Debug-Information-Warning-Error-Critical loglama sıralaması information ve solundakiler loglanacak.
@@ -46,6 +50,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
 
         //Product entity de yapılan conf. nazaran buradakiler direkt veritabanını etkiler.
+     
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //YAPILAN HER MODEL DEĞİŞİKLİĞİNDE MIGRATION YAPMAN GEREKİYOR YOKSA VERITABANI VE VS BAGLANTISI OLMAZ
@@ -143,6 +148,45 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //});
 
             //<---------------OWNED ENTITY TYPES-------------->
+
+            //<---------------KEYLESS ENTITY TYPES-------------->
+            //modelBuilder.Entity<ProductFull>().HasNoKey();               //bu entitynin keyless olduğunu belirttik.
+
+            //<---------------KEYLESS ENTITY TYPES-------------->
+
+            //<---------------ENTITY PROPERTIES-------------->
+
+            //modelBuilder.Entity<Product>().Ignore(x => x.Barcode); //product entitysindeki barcode propertysini Maplemek için ignore et
+            //modelBuilder.Entity<Product>().Property(x => x.Name).IsUnicode(false); // bu da [Unicode(false)]:varchar örneği
+            //modelBuilder.Entity<Product>().Property(x => x.Url).HasColumnType("varchar(500)").HasColumnName("ProductUrl");
+
+            //<---------------ENTITY PROPERTIES-------------->
+
+
+            //<---------------INDEKSLEME-------------->
+
+            //modelBuilder.Entity<Product>().HasIndex(x => x.Name);  //product entitysinin Name propu indekslendi 
+            //modelBuilder.Entity<Product>().HasIndex(x => new { x.Name, x.Price }).HasDatabaseName("NAMEPRICE");  //composed indexleme örneği iki prop için tek index oluşturduk.
+            //modelBuilder.Entity<Product>().HasIndex(x => x.Name).IncludeProperties(x => new { x.Price, x.Stock }); //Name göre yapılam sorguda name,price,stock istiyorsak bu şekilde
+            //indeksleme yapmalıyız.o indekse hangi propları eklemek istiyorsak onu belirtiyoruz
+
+            //Check Constrait
+            //modelBuilder.Entity<Product>().HasCheckConstraint("PriceDiscountCheck", "[Price] > [DiscountPrice]");
+            //< ---------------INDEKSLEME-------------- >
+
+
+            //< ---------------QUERY-------------- >
+
+
+
+            //< ---------------QUERY-------------- >
+
+
+            //< ---------------INNER JOIN-------------- > iki tablo arasındaki ortak alanları almak istediğimizde kullanılan join tipi
+
+
+
+            //< ---------------INNER JOIN-------------- >
 
 
             base.OnModelCreating(modelBuilder);
