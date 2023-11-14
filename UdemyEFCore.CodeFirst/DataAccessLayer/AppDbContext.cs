@@ -8,21 +8,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UdemyEFCore.CodeFirst.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace UdemyEFCore.CodeFirst.DataAccessLayer
 {
+   
     public class AppDbContext : DbContext
     {
+        //dışardan değer alıp AppDbContexte gönderceğin zaman 
+        private readonly int Barcode;
+
+        //bu değeri constructorda gönder.
+        public AppDbContext(int barcode)
+        {
+            Barcode = barcode;
+        }
+
+        public AppDbContext()
+        {
+            
+        }
+
         public DbSet<Product> Products { get; set; } //Products EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
         public DbSet<Category> Categories { get; set; } //Categories EFCore migrations tarafından veritabanında oluşturacağı tablonun ismi olacak.
                                                         // Bunu eklemezsen AppDbcontextten bu tabloya erişim sağlayıp işlem yapamazsın.
         public DbSet<ProductFeature> ProductFeatures { get; set; }
 
         //alttaki ikisi many to many için
-        //public DbSet<Student> Students { get; set; }
+        public DbSet<Student> Students { get; set; }
 
-        //public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<Teacher> Teachers { get; set; }
 
         //alttaki ikisi EfCore Inheritance için
 
@@ -36,6 +52,12 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         public  DbSet<ProductFull> ProductFulls { get; set; } //Keyless Tipi için oluşturuldu
 
         public DbSet<Person> People { get; set; }  //Query kısmı için oluşturduk
+
+        public DbSet<ProductEssential> ProductEssentials { get; set; }  // raw sql için oluşturuldu bu entity sorgularımızı karşılayacağımız sınıflardan birisi.
+
+        public DbSet<ProductWithFeature> ProductWithFeatures { get; set; }
+
+        public DbSet<ProductAll> ProductAlls { get; set; }    //ToView için oluşturduk sqlde oluşturduğmuz view bunda karşılıcaz
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //Trace-Debug-Information-Warning-Error-Critical loglama sıralaması information ve solundakiler loglanacak.
@@ -45,7 +67,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //lazy loading kullanacaksan önce efcoreproxies kütüphanesini indir sonra burada UseLazyLoadingProxies() methodunu çağır
             //ondan önce de bu olayı anlayabilmek için loglama yapmasını istedik console sadece information olanları yazdırcak
 
-            optionsBuilder.UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
+            optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information).UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
         }
 
 
@@ -170,15 +192,22 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //modelBuilder.Entity<Product>().HasIndex(x => x.Name).IncludeProperties(x => new { x.Price, x.Stock }); //Name göre yapılam sorguda name,price,stock istiyorsak bu şekilde
             //indeksleme yapmalıyız.o indekse hangi propları eklemek istiyorsak onu belirtiyoruz
 
-            //Check Constrait
-            //modelBuilder.Entity<Product>().HasCheckConstraint("PriceDiscountCheck", "[Price] > [DiscountPrice]");
+            //Check Constraint
+            //modelBuilder.Entity<Product>().HasCheckConstraint("PriceDiscountCheck", "[Price] > [DiscountPrice]"); //dbde price discount pricetan büyük olamaz.
             //< ---------------INDEKSLEME-------------- >
 
 
             //< ---------------QUERY-------------- >
 
+            //rawSqlCustom
+            //modelBuilder.Entity<ProductEssential>().HasNoKey(); //SQL sorgusunu karşılamak için kullancağımız entity sorguda id yoksa entityden de kaldırmak gerekir.
+            modelBuilder.Entity<ProductWithFeature>().HasNoKey();  //entity de id var ama bu primary key olsun istemiyoruz EFCORE primary key olarak anlarsa bunu track etmeye çalışır.
 
+            //ToSqlQuery kullanımı merkezi yerden sql kodu yazma
+            modelBuilder.Entity<ProductEssential>().HasNoKey().ToSqlQuery("select Name,Price from Products"); //merkezi sorgu program.cs te ToList(); dendiğinde çalışacak kod.
 
+            //toView methodu için özel sorgular özel viewlar görmek istediimizde bu viewları sqlde oluşturup burada belirtebiliriz.
+            modelBuilder.Entity<ProductAll>().HasNoKey().ToView("productWithFeature"); //databasede view klasöründeki oluşturduğumz view ismini verdik.
             //< ---------------QUERY-------------- >
 
 
@@ -188,7 +217,20 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
             //< ---------------INNER JOIN-------------- >
 
+            //< ---------------GLOBAL QUERY FILTER-------------- >
 
+            modelBuilder.Entity<Product>().Property(x => x.IsDeleted).HasDefaultValue(false); //product entitysinde oluşturduğumuz IsDeleted a default değer atadık.
+            //modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted==false); //productla ilglil yaptığımız her sorguda where koşulunda  bu is deleted kısmı da eklenecek
+
+         if (Barcode != default(int))  //integerin default değeri olan 0 a eşit değilse
+            {
+                modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false && x.Barcode ==Barcode); //hem isdeleted false ise hem de kullanıcıdan gelen Barcode x.Barcode eşitse
+            }
+            else
+            {
+                modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false); //eğer ctor boş ise direkt Isdeleted false olanları getir
+            }
+            //< ---------------GLOBAL QUERY FILTER-------------- >
             base.OnModelCreating(modelBuilder);
         }
 

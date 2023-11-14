@@ -15,7 +15,8 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
     //<---------------CONFIGURATION-------------->
 
-    [Index(nameof(Name))]  //tip güvemli bir şekilde indeksleme yapacağımız prop. tanımı.
+    //INDEKSLEME
+    //[Index(nameof(Name))]  //tip güvemli bir şekilde indeksleme yapacağımız prop. tanımı.
     //[Index(nameof(Name),nameof(Price))]   //composed index denir buna bu türde oluşturulan indekste iki propertynin de sütunları bulunur.daha çok ikisini bir sorguda kullanıyorsan mantıklı.
     public class Product
     {
@@ -77,6 +78,11 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         //public decimal PriceStock {  get; set; }    
 
         //< ---------------DATABASE - GENERATED - ATTRIBUTES-------------- >
+
+        //< ---------------GLOBAL QUERY FILTER-------------- >
+        public bool IsDeleted { get; set; }
+
+        //< ---------------GLOBAL QUERY FILTER-------------- >
 
     }
 }

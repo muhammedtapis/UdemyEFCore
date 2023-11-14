@@ -14,6 +14,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         public int Product_Id { get; set; }
         public string CategoryName { get; set; }
         public string  Name { get; set; }
+        [Precision(18, 2)]
         public decimal Price { get; set; }
         public int Height { get; set; }
     }
