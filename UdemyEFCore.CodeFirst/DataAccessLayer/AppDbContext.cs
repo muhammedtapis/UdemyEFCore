@@ -57,7 +57,28 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
 
         public DbSet<ProductWithFeature> ProductWithFeatures { get; set; }
 
-        public DbSet<ProductAll> ProductAlls { get; set; }    //ToView için oluşturduk sqlde oluşturduğmuz view bunda karşılıcaz
+        public DbSet<ProductAll> ProductAlls { get; set; }    //ToView için oluşturduk sqlde oluşturduğmuz view bunda karşılıcaz sadece karşılama modeliyse eğer migration oluşturduktan sonra bununla alakalıkodları sil.
+
+
+        //function için birinci yol model üzerinden
+        public DbSet<ProductAllWithFeature> ProductAllWithFeatures { get; set; }  //function bölümünde data karşılamak için oluşturdk.
+
+
+        //function scaler değer dönen(tek değer) ikinc, yol modelleme yaparak count için.
+        public DbSet<ProductCount> ProductCount { get; set; }
+
+
+        //Function ikinci yol 
+        public IQueryable<ProductAllWithFeature> GetProductAllWithFeatures(int categoryId)
+        {
+            return FromExpression(() => GetProductAllWithFeatures(categoryId));  //Fromexpression methodu bizden func istiyo geriye Iqueryable TResult dönen bi fonk istediği için methodu verdik buraya
+        }
+
+        public int GetProductAllCount(int categoryId)
+        {
+            throw new NotSupportedException("Bu method EFCORE tarafından çalıştırılmaktadır.");
+            //geriye skaler değer dönen functionları MUTLAKA EF.CORE içinde kullanman lazım o sebeple bu şekilde kullanma diye exception fırlattık.
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //Trace-Debug-Information-Warning-Error-Critical loglama sıralaması information ve solundakiler loglanacak.
@@ -67,7 +88,8 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //lazy loading kullanacaksan önce efcoreproxies kütüphanesini indir sonra burada UseLazyLoadingProxies() methodunu çağır
             //ondan önce de bu olayı anlayabilmek için loglama yapmasını istedik console sadece information olanları yazdırcak
 
-            optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information).UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
+            optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information)  //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)  //GLOBAL OLARAK TRACKING KAPATMAK. 
+                .UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
         }
 
 
@@ -206,8 +228,8 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //ToSqlQuery kullanımı merkezi yerden sql kodu yazma
             modelBuilder.Entity<ProductEssential>().HasNoKey().ToSqlQuery("select Name,Price from Products"); //merkezi sorgu program.cs te ToList(); dendiğinde çalışacak kod.
 
-            //toView methodu için özel sorgular özel viewlar görmek istediimizde bu viewları sqlde oluşturup burada belirtebiliriz.
-            modelBuilder.Entity<ProductAll>().HasNoKey().ToView("productWithFeature"); //databasede view klasöründeki oluşturduğumz view ismini verdik.
+            //toView methodu için özel sorgular özel viewlar görmek istediğimizde bu viewları sqlde oluşturup burada belirtebiliriz.
+            //modelBuilder.Entity<ProductAll>().HasNoKey().ToView("productWithFeature"); //databasede view klasöründeki oluşturduğumz view ismini verdik.
             //< ---------------QUERY-------------- >
 
 
@@ -220,19 +242,50 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             //< ---------------GLOBAL QUERY FILTER-------------- >
 
             modelBuilder.Entity<Product>().Property(x => x.IsDeleted).HasDefaultValue(false); //product entitysinde oluşturduğumuz IsDeleted a default değer atadık.
-            //modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted==false); //productla ilglil yaptığımız her sorguda where koşulunda  bu is deleted kısmı da eklenecek
+                                                                                              //modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted==false); //productla ilglil yaptığımız her sorguda where koşulunda  bu is deleted kısmı da eklenecek
 
-         if (Barcode != default(int))  //integerin default değeri olan 0 a eşit değilse
-            {
-                modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false && x.Barcode ==Barcode); //hem isdeleted false ise hem de kullanıcıdan gelen Barcode x.Barcode eşitse
-            }
-            else
-            {
-                modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false); //eğer ctor boş ise direkt Isdeleted false olanları getir
-            }
+            //if (Barcode != default(int))  //integerin default değeri olan 0 a eşit değilse
+            //   {
+            //       modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false && x.Barcode ==Barcode); //hem isdeleted false ise hem de kullanıcıdan gelen Barcode x.Barcode eşitse
+            //   }
+            //   else
+            //   {
+            //       modelBuilder.Entity<Product>().HasQueryFilter(x => x.IsDeleted == false); //eğer ctor boş ise direkt Isdeleted false olanları getir
+            //   }
             //< ---------------GLOBAL QUERY FILTER-------------- >
+
+
+            //< ---------------STORED PROCEDURE-------------- >
+
+            //modelBuilder.Entity<ProductAll>().HasNoKey();
+
+            //< ---------------STORED PROCEDURE-------------- >
+
+
+            //< ---------------FUNCTION-------------- >
+
+            //parametre almayan gerite table dönen function
+            //modelBuilder.Entity<ProductAll>().ToFunction("fc_product_all"); 
+
+
+            //ikinci yol Dbset tanımlanmıyor burada yukarda bi metot tanımlanıyor sonra burada belirtiyoruz
+            modelBuilder.HasDbFunction(typeof(AppDbContext).GetMethod(nameof(GetProductAllWithFeatures), new[] {typeof(int)})!).HasName("fc_product_all_with_parameter"); //nullable uyarısı için !
+                                                                                      // method ismi  , parametre özelliği 
+
+            //SKALER TEK DEĞER DÖNEN FUNCTION İÇİN İLK YOL METHOD
+            modelBuilder.HasDbFunction(typeof(AppDbContext).GetMethod(nameof(GetProductAllCount), new[] { typeof(int) })!).HasName("fc_get_product_count"); //nullable uyarısı için !
+
+
+            //SKALER TEK DEĞER DÖNEN FUNC İKİNCİ YOL MAPLEME MODEL
+            modelBuilder.Entity<ProductCount>().HasNoKey(); //model bu primary key yok onu belirt
+
+
+            //< ---------------FUNCTION-------------- >
+
             base.OnModelCreating(modelBuilder);
         }
+
+
 
 
 

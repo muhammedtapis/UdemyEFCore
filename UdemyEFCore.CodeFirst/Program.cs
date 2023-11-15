@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Azure;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Identity.Client;
@@ -663,7 +664,100 @@ void GlobalQueryFilters(AppDbContext _context)
 
 }
 
-using (var _context = new AppDbContext(1907))
+void QueryTags(AppDbContext _context)
+{
+    var productWithFeature = _context.Products.TagWith("Bu Query ürünler ve ürünlere bağlı özellikleri getirir") //tagleme kısmı
+        .Include(x => x.ProductFeature).Where(x => x.Price > 100).ToList(); //join işlemimize Tagleme yapcaz
+
+    Console.WriteLine("QueryTag Başarılı!!!");
+}
+
+void GlobalTracking(AppDbContext _context)
+{
+    //
+    var product = _context.Products.First(x => x.Id == 6);  //tracking da
+
+    product.Name = "Kalem 5";
+
+    //_context.Update(product);   //fakat tracking kapalı olduğu zaman bu metodu yazıp EFCore belirtmemiz gerekiyor.
+    //_context.Entry(product).State = EntityState.Modified; //update metoduyla aynı şeyi yapar.
+
+    _context.SaveChanges();  //normal track ettiği zaman sadece saveChanges yapsak yeterli oluyor.
+}
+
+
+void StoredProcedure(AppDbContext _context)
+{
+    //eğer Stored Procedure geriye bir tablo dönüyorsa bunu karşılamak gerekiyo entity ile
+    //örneğin insert update delete yapabilir bu procedure
+
+    var product =  _context.Products.FromSqlRaw("exec sp_get_products").ToList();
+    //önemli nokta Products entitysi için query filter koymuştuk IsDeleted false olanları getirmesi için storedprocedure o filter varken hata verdi.
+
+    var productAll = _context.ProductAlls.FromSqlRaw("exec sp_get_products_all").ToList(); //burada procedure karşılayacağımız model var
+    //bu sorguda 7 ver geldi bi üsttekinde 8 gelmişti bunun sebebi kalem 6 nın productFeature u yok, join yaptığımız için SQL procedure da kesişmeyeni getirmiyor.
+    //custom modele mapleyeceksen verilerini oluşturduğun o custom modeli Keyless belirt   HasNoKey();
+
+    //ParametreAlan StoredProcedure
+
+    int categoryId = 3;
+    decimal price = 100;
+    var productAll1 = _context.ProductAlls.FromSqlInterpolated($"exec sp_get_products_all_parameters {categoryId},{price}").ToList();
+
+    //geriye dönmeyen ya da geriye tek bir değer dönen (insert edilmiş datanın idsi)
+
+    var productInsert = new Product()
+    {
+        Name = "Kalem 6",
+        Price = 600,
+        DiscountPrice = 429,
+        Stock = 167,
+        Barcode = 555,
+        Url="httpsss",
+        CategoryId = 3,
+    };
+
+    var newProductIdSqlParameter = new SqlParameter("@newId",System.Data.SqlDbType.Int);
+    newProductIdSqlParameter.Direction = System.Data.ParameterDirection.Output;  // output türü olduğun belirtmemiz lazım sqlden geliyo bu id bilgisi bize
+   
+    _context.Database.ExecuteSqlInterpolated(@$"exec sp_insert_products {productInsert.Name},{productInsert.Price},{productInsert.DiscountPrice}
+,{productInsert.Stock},{productInsert.Barcode},{productInsert.Url},{productInsert.CategoryId}, {newProductIdSqlParameter} out"); //burada da out belirtiyoruz.
+
+    var newProductId = newProductIdSqlParameter.Value; //yukarda oluşturduğumuz bi sql parametresi biz bunun değerini alarak okuyabiliriz.
+                                                       //aldığımız bu değer stored proceduredan gelen  producta ait Id değeri
+    Console.WriteLine("StoredProcedure Başarılı!!!");
+}
+
+async Task Function(AppDbContext _context)
+{
+    //DBSET kullanarak BİRİNCİ YOL
+    //tolist dendiğinde modelbuilderdaki function çalışacak
+    //var productAll = await _context.ProductAlls.ToListAsync();
+
+    //int categoryId = 4;
+    //var productAllWithFeature = await _context.ProductAllWithFeatures.FromSqlInterpolated($"select * from fc_product_all_with_parameter({categoryId})").ToListAsync();
+
+    //DBSET Kullanmadan İKİNCİ YOL modelBuilderda oluşturulan metot ile.
+    var productAllWithFeatureSecondWay = await _context.GetProductAllWithFeatures(3).ToListAsync();
+    var productAllWithFeatureSecondWay1 = await _context.GetProductAllWithFeatures(3).Where(x => x.Width<70).ToListAsync(); //storedprocedure aksine functionlarda where kullanabiliriz sql cümleciğine eklenir.
+   
+    //skaler değer dönenler için tanımlanan doğru fonksiyon kullanımı
+    var products = await _context.Categories.Select(x => new //yeni kategori instance oluşturdu categorideki her veriyi CAtegoryName ve ProductCount olarak aldı kullandık metod.
+    {
+        CategoryName = x.Name,
+        ProductCount = _context.GetProductAllCount(x.Id)
+    }).ToListAsync();
+
+
+    //SKALER TEK DEĞER DÖNEN FUNC İKİNCİ YOL MAPLEME MODEL
+    int categoryId1 = 4;
+    var count = _context.ProductCount.FromSqlInterpolated($"select dbo.fc_get_product_count({categoryId1}) as Count").First().Count; //zaten tek değer dönceğini biliyoruz modelde de tek prop var o yüzden
+    //first yapıp o tek değeri alıp o değerin de modeldeki karşılığı olan Count u alıyoruz.!!!buraya verdiğin "Count" ismi önemli burdaki isimle karşılayacak modeldeki prop ismi aynı olmalı EFCore anlayamaz yoksa!!!
+    Console.WriteLine("Function Başarılı!!!");
+
+}
+
+using (var _context = new AppDbContext()) //AppDbContext(1907) barcode araması yapabilirsin
 {
     //<--------------DBCONTEXT-------------->
 
@@ -712,10 +806,18 @@ using (var _context = new AppDbContext(1907))
     //ToSqlQuery(_context);
     //ToView(_context);
     //Pagination(_context);
-    GlobalQueryFilters(_context);
+    //GlobalQueryFilters(_context);
+    //QueryTags(_context);
+    //GlobalTracking(_context);
     //< ---------------QUERY-------------- >
 
+    //< ---------------STORED PROCEDURE - FUNCTION-------------- >
 
+    //StoredProcedure(_context);
+    await Function(_context);
+
+
+    //< ---------------STORED PROCEDURE - FUNCTION-------------- >
 
     //<---------------DbSet METHODS------------->
     #region DBSET METHODS
