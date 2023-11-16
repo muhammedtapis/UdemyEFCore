@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,18 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
             Barcode = barcode;
         }
 
+
+        //<------------MULTIPLE DBCONTEXT--------------->
+        private DbConnection  _connection; //birden fazla dbContext aynı connectionu kullanacağı için bunun belirtmemiz gerek 
+
+        //OnConfiguring metodunda bulunan UseSqlServer() içindekikodu silip burada oluşturduğumuz UseSqlServer(_connection) yazıyoruz,
+        //daha sonra da DbContextInitializer.Build() silinecek çünkü orada connection veriyorduk zaten
+        public AppDbContext(DbConnection connection)
+        {
+            _connection = connection;
+        }
+
+        //<------------MULTIPLE DBCONTEXT--------------->
         public AppDbContext()
         {
             
@@ -83,13 +96,29 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         {
             //Trace-Debug-Information-Warning-Error-Critical loglama sıralaması information ve solundakiler loglanacak.
 
-            DbContextInitializer.Build();
-            //optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information).UseLazyLoadingProxies().UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
-            //lazy loading kullanacaksan önce efcoreproxies kütüphanesini indir sonra burada UseLazyLoadingProxies() methodunu çağır
-            //ondan önce de bu olayı anlayabilmek için loglama yapmasını istedik console sadece information olanları yazdırcak
+            //<------------MULTIPLE DBCONTEXT--------------->
+            if(_connection== default(DbConnection))
+            {
+                DbContextInitializer.Build();
+                //optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information).UseLazyLoadingProxies().UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
+                //lazy loading kullanacaksan önce efcoreproxies kütüphanesini indir sonra burada UseLazyLoadingProxies() methodunu çağır
+                //ondan önce de bu olayı anlayabilmek için loglama yapmasını istedik console sadece information olanları yazdırcak
 
-            optionsBuilder.LogTo(Console.WriteLine,LogLevel.Information)  //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)  //GLOBAL OLARAK TRACKING KAPATMAK. 
-                .UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
+                optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information)  //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)  //GLOBAL OLARAK TRACKING KAPATMAK. 
+                    .UseSqlServer(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
+            }
+            else
+            {
+                //AppDbContext ctor connection parametresi varsa bu çalışacak.
+                optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information)  //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)  //GLOBAL OLARAK TRACKING KAPATMAK. 
+                    .UseSqlServer(_connection);
+            }
+
+
+
+            //<------------MULTIPLE DBCONTEXT--------------->
+
+   
         }
 
 

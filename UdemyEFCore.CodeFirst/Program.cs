@@ -1,16 +1,23 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using AutoMapper.QueryableExtensions;
 using Azure;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using UdemyEFCore.CodeFirst;
 using UdemyEFCore.CodeFirst.DataAccessLayer;
-
+using UdemyEFCore.CodeFirst.DTOs;
+using UdemyEFCore.CodeFirst.Mappers;
 
 DbContextInitializer.Build();
+
+//<--------------MULTIPLE DBCONTEXT-------------->
+var connection = new SqlConnection(DbContextInitializer.Configuration.GetConnectionString("SqlCon"));
 
 //<--------------DBCONTEXT-------------->
 
@@ -757,6 +764,112 @@ async Task Function(AppDbContext _context)
 
 }
 
+async Task Projection(AppDbContext _context)
+{
+    //anonymous entity
+
+    //var product1 = await _context.Products.Include(x => x.Category).Include(y => y.ProductFeature).Select(z => new
+    //{
+    //    categoryname = z.Category.Name,
+    //    productname = z.Name,
+    //    productprice = z.Price,
+    //    width =(int?)z.ProductFeature.Width
+    //}).Where(x => x.width>10).ToListAsync();
+
+    //var product2 = await _context.Categories.Select(z => new //eğer SELECT kullandıysan Include yazmana gerek yok ondanönce kaldırabilirsin.
+    //{
+    //    CategoryName = z.Name,
+    //    ProductNames = String.Join(",", z.Products.Select(x => x.Name)), //z kategori oluyo,x kategorisindeki productlardan nameleri seç ve virgülle birleştirip anonim sınıfın  products sütununa ata
+    //    TotalPrice = z.Products.Sum(x => x.Price), //kategorilerdeki productsların pricelarını topla
+    //    Price = z.Products.Select(x => x.Price).Sum() //bu şekilde de sum yapabilirsin. ama daha uzun yol oluyor yukarıdaki kod daha kolay kısa.
+    //}).Where(A => A.TotalPrice > 123).OrderBy(x => x.TotalPrice).ToListAsync();  //total 123den kucukler ve totalprice göre sıralama
+
+
+    //DTO - VIEW MODEL
+
+    //var product3 = await _context.Products.Include(x => x.Category).Include(y => y.ProductFeature).Select(z => new ProductDTO
+    //{
+    //    CategoryName = z.Category.Name,
+    //    ProductName = z.Name,
+    //    ProductPrice = z.Price,
+    //    Width = (int?)z.ProductFeature.Width
+    //}).Where(x => x.Width > 10).ToListAsync();
+
+
+    //var product4 = await _context.Categories.Select(z => new ProductDTO2//eğer SELECT kullandıysan Include yazmana gerek yok ondanönce kaldırabilirsin.
+    //{
+    //    CategoryName = z.Name,
+    //    ProductNames = String.Join(",", z.Products.Select(x => x.Name)), //z kategori oluyo,x kategorisindeki productlardan nameleri seç ve virgülle birleştirip anonim sınıfın  products sütununa ata
+    //    TotalPrice = z.Products.Sum(x => x.Price), //kategorilerdeki productsların pricelarını topla
+    //    Price = z.Products.Select(x => x.Price).Sum(), //bu şekilde de sum yapabilirsin. ama daha uzun yol oluyor yukarıdaki kod daha kolay kısa.
+    //    TotalWidth = (int?)z.Products.Select(x => x.ProductFeature.Width).Sum() //her productun feature olmayabilir o sebeple null gelebilir width
+    //}).Where(A => A.TotalPrice > 123).OrderBy(x => x.TotalPrice).ToListAsync();  //total 123den kucukler ve totalprice göre sıralama
+
+
+    //DTO VIEW MODEL WITH AUTO-MAPPER
+    //AutoMapper kullanırsan dbden bütün Product propertyleri gelir ama yukarıda yaptığın gibi elle yaparsan sadece {}içinde belirttiğin propertyler sql sorgusunda bulunur.
+   
+
+    //var product5 = _context.Products.ToList(); //buradakmaplemede sql sorgusunda bütün Products Propertyleri sorgulanıyor productDtoMap2 de sadece Dto da olanlar sorgulanıyor.
+
+    //var productDtoMap = ObjectMapper.Mapper.Map<List<ProductDTOAutoMapper>>(product5);  //product5 bize liste döndüğü için burada da belirttik.
+
+    //otomatik DTO mapleme yukardaki maplemede ütün products propertylerini çektik ondan sonra mapledik bu örnkte sadece ihtiyacı olanları alacak.
+
+    //var productDtoMap2 = _context.Products.ProjectTo<ProductDTOAutoMapper>(ObjectMapper.Mapper.ConfigurationProvider).ToList(); // 794. satırdaki gibi propertyleri tek tek yazıp eşitlemekten kurtulduk aynı işi yapıyor.
+                                                                                                                                //Kullanacağoımız entity üzerinden ProjectTo<>() metoduyla erişiyoruz   ConfigurationProvider istiyodu bizden biz de bunu  ObjectMapper.Mapper da veriyoruz
+
+    //istersek where ve select gibi LINQ metodları kullanabiliriz bu oluşacak SQL cümleciğine eklenir
+    var productDtoMap3 = _context.Products.ProjectTo<ProductDTOAutoMapper>(ObjectMapper.Mapper.ConfigurationProvider).Where(x => x.Price>100).Select(x => x.Name).ToList();
+   
+                                                                                                                        
+    Console.Out.WriteLine("Projection Başarılı");
+}
+
+void Transactions(AppDbContext _context)
+{
+
+    using(var transaction = _context.Database.BeginTransaction())
+    {
+        var category = new Category() { Name = "Kılıflar" };
+
+        _context.Categories.Add(category);
+        _context.SaveChanges();  //ilk savechanges
+
+        var product = new Product()
+        {
+            Name = "Kılıf 1",
+            Price = 250,
+            DiscountPrice = 200,
+            Stock = 341,
+            Barcode = 12334,            //gerçek hayatta category.Id yerine direkt yukarıda olşturduğumuz category verebiliriz. o zaman bu transaction scopuna gerek yok
+            Url = "httpss",              //Id veri tabanına kaydolunca oluşacağı için committen önce o değer aslında yoktur.
+            CategoryId = category.Id,  //kayıt yaparken yukarda oluşturduğmuz categorynin idsini aldık fakat burda bir problem var SaveChanges() aşağıda çağırdığımız için daha id oluşmamış olacak.
+                                       //bunun önüne geçmek için producttan önce de SaveChanges() çağırmamız gerekir.
+            ProductFeature = new() { Color = "blue", Height = 10, Width = 6 }
+        };
+
+        _context.Products.Add(product);
+        _context.SaveChanges(); //ikinci savechanges
+
+        using (var dbContext2 = new AppDbContext(connection))
+        {
+            dbContext2.Database.UseTransaction(transaction.GetDbTransaction()); 
+        }
+
+        transaction.Commit(); //transaction scopuna aldık en sonda commit ettiğimiz için istediğin kadar savechanges koy bir tanesi hata verse dahi diğerleri de iptal olacak.
+        //eğer try catch bloğu kullanıyorsan bu transaction için açık bir şekilde transaction.RollBack();
+    }
+
+   
+
+}
+
+
+void IsolationLevels()
+{
+
+}
 using (var _context = new AppDbContext()) //AppDbContext(1907) barcode araması yapabilirsin
 {
     //<--------------DBCONTEXT-------------->
@@ -814,10 +927,33 @@ using (var _context = new AppDbContext()) //AppDbContext(1907) barcode araması 
     //< ---------------STORED PROCEDURE - FUNCTION-------------- >
 
     //StoredProcedure(_context);
-    await Function(_context);
+    //await Function(_context);
 
 
     //< ---------------STORED PROCEDURE - FUNCTION-------------- >
+
+
+    //< ---------------PROJECTIONS-------------- >
+
+    //await Projection(_context);
+
+    //< ---------------PROJECTIONS-------------- >
+
+
+    //< ---------------TRANSACTIONS-------------- >
+
+    //Transactions(_context);
+
+    //< ---------------TRANSACTIONS-------------- >
+
+
+    //< ---------------ISOLATION LEVELS-------------- >
+
+
+
+
+    //< ---------------ISOLATION LEVELS-------------- >
+
 
     //<---------------DbSet METHODS------------->
     #region DBSET METHODS
