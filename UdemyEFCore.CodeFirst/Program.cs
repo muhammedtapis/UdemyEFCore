@@ -866,10 +866,110 @@ void Transactions(AppDbContext _context)
 }
 
 
-void IsolationLevels()
+void ReadUncommitted(AppDbContext _context)
+{
+    using(var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted)) //isolation seviyesi belirlendi transaction başlatıldı
+    {                               //transaction isolation seviyesini burada belirtmene gerek yok çünkü okuma yapmıyorsun ama örnek olarak göstredik.SQL querysinde belirtildi.
+        var product = _context.Products.First();
+        product.Price = 2000;
+        
+        _context.Products.Add(new Product()
+        {
+            Name = "a",
+            Price = 1,
+            Stock = 2,
+            Barcode = 3,
+            CategoryId = 3,
+            DiscountPrice= 1,
+            Url="aaa"
+        });
+        _context.SaveChanges();
+
+
+        transaction.Commit();
+    }
+
+
+
+}
+
+void ReadCommitted(AppDbContext _context)
+{
+    using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.ReadCommitted)) //isolation seviyesi belirlendi transaction başlatıldı
+    {                               //transaction isolation seviyesini burada belirtmene gerek yok çünkü okuma yapmıyorsun ama örnek olarak göstredik.SQL querysinde belirtildi.
+        var product = _context.Products.First();
+        product.Price = 3000;
+
+        //_context.Products.Add(new Product()
+        //{
+        //    Name = "a",
+        //    Price = 1,
+        //    Stock = 2,
+        //    Barcode = 3,
+        //    CategoryId = 3,
+        //    DiscountPrice = 1,
+        //    Url = "aaa"
+        //});
+        _context.SaveChanges();
+
+
+        transaction.Commit();
+    }
+}
+
+
+void RepeatableRead(AppDbContext _context)
+{
+    using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.RepeatableRead)) //isolation seviyesi belirlendi transaction başlatıldı
+    {                            
+        var product = _context.Products.Take(3).ToList(); //ilk 3 satırı aldık
+
+        //okuma işlemini sqldeki transactionda yaptığımız için burada isolation seviyesi belirtilmeli.
+        //bu transactionda repeatableread seviyesinde okuma yaparken diğer transaction silme ve update işlemleri yapamaz ancak insert yapabilir.
+
+        _context.SaveChanges();
+
+
+        transaction.Commit();
+    }
+}
+
+void Serializable(AppDbContext _context)
+{
+    using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable)) //isolation seviyesi belirlendi transaction başlatıldı
+    {
+        var product = _context.Products.ToList(); //insert denemesi yapazağımız için tüm datyı çektik çünkü idyi biz belirlemiyoruz araya insert yapamayız
+
+        //okuma işlemini sqldeki transactionda yaptığımız için burada isolation seviyesi belirtilmeli.
+        //bu transactionda serializable seviyesinde okuma yaparken diğer transaction silme , update ve (repeatable ek olarak) insert işlemleri yapamaz.
+
+
+        transaction.Commit();
+    }
+}
+
+void Snapshot(AppDbContext _context)
+{
+    using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Snapshot)) //isolation seviyesi belirlendi transaction başlatıldı
+    {
+        var product = _context.Products.AsNoTracking().ToList(); //datanın memoryden gelmediğini de göstermek için asnotracking yaptık.
+
+        //business code
+        //bu transactionda ilk data çekmenden sonra başka transaction tarafından yapılan insert update delete işlemleri yapılabilir.
+        //fakat daha sonra tekrar datayı çekmeye çalışırsak update delete insert edilmiş datayı değil ilk çektiğimiz datanın aynısını görürüz.
+        //bu transactionın içerisinde tutarlılık olur.
+        var product1 = _context.Products.AsNoTracking().ToList();
+
+        transaction.Commit();
+    }
+}
+
+//< ---------------CONCURRENCY-------------- >
+void StoreWins(AppDbContext _context)
 {
 
 }
+
 using (var _context = new AppDbContext()) //AppDbContext(1907) barcode araması yapabilirsin
 {
     //<--------------DBCONTEXT-------------->
@@ -949,10 +1049,20 @@ using (var _context = new AppDbContext()) //AppDbContext(1907) barcode araması 
 
     //< ---------------ISOLATION LEVELS-------------- >
 
-
-
+    //ReadUncommitted(_context);
+    //ReadCommitted(_context);
+    //RepeatableRead(_context);
+    //Serializable(_context);
+    //Snapshot(_context);
 
     //< ---------------ISOLATION LEVELS-------------- >
+
+
+    //< ---------------CONCURRENCY-------------- >
+
+
+
+    //< ---------------CONCURRENCY-------------- >
 
 
     //<---------------DbSet METHODS------------->

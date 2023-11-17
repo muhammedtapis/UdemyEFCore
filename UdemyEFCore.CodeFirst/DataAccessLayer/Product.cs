@@ -42,7 +42,7 @@ namespace UdemyEFCore.CodeFirst.DataAccessLayer
         public int Barcode { get; set; }
 
         //[Column(TypeName ="varchar(500)")]  //veritabanındaki alanın tipini belirtebiliyoruz burda URL için 
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         //  public DateTime? CreatedDate { get; set; } //nullable yaptık
 
